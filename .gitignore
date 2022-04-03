@@ -1,0 +1,16 @@
+*.vscode/
+
+Build/
+Scripts/
+
+Client/Bin
+Client/Build
+
+Engine/Lib
+Engine/Build
+
+Server/Bin
+Server/Build
+
+Tests/Bin
+Tests/Build
