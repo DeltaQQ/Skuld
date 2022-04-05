@@ -3,8 +3,10 @@
 class Window
 {
 public:
-	Window(int width, int height, const char* title);
+	Window();
 	~Window();
+
+	void create(int width, int height, const char* title);
 
 	explicit operator bool() const;
 

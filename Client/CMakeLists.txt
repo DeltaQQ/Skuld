@@ -2,6 +2,8 @@ project(Client)
 
 add_executable(${PROJECT_NAME}
     "Source/main.cpp"
+    "Source/GameClient.h"
+    "Source/GameClient.cpp"
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -12,6 +14,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
     RUNTIME_OUTPUT_DIRECTORY "../Bin"
     # MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+    "../Server/Source"
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC

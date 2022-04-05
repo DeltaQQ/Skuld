@@ -7,7 +7,7 @@ GameServer::GameServer(uint16_t port)
 {
 }
 
-void GameServer::on_message()
+void GameServer::on_message(Net::Message<GameMsg>& message)
 {
 
 }

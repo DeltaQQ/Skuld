@@ -11,6 +11,7 @@ Engine/Build
 
 Server/Bin
 Server/Build
+Server/Config
 
 Tests/Bin
 Tests/Build

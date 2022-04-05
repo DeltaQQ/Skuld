@@ -1,8 +1,12 @@
 #include "Window.h"
 
-Window::Window(int width, int height, const char* title)
+Window::Window()
 	:
 	m_window(nullptr)
+{
+}
+
+void Window::create(int width, int height, const char* title)
 {
 	glfwInit();
 	m_window = glfwCreateWindow(width, height, title, nullptr, nullptr);

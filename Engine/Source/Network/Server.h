@@ -12,8 +12,9 @@ namespace Net
 	public:
 		Server(uint16_t port)
 			:
-			m_acceptor(m_context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port))
-		{}
+			m_acceptor(m_context, asio::ip::tcp::endpoint(get_local_ipv6_address(), port))
+		{
+		}
 
 		virtual ~Server()
 		{
@@ -30,11 +31,11 @@ namespace Net
 			}
 			catch (std::exception& e)
 			{
-				std::cerr << "[SERVER] Exception: " << e.what() << std::endl;
+				std::cerr << "[Server] " << e.what() << std::endl;
 				return false;
 			}
 
-			std::cout << "[SERVER] Started!" << std::endl;
+			std::cout << "[Server] Started!" << std::endl;
 			return true;
 		}
 
@@ -45,16 +46,23 @@ namespace Net
 			if (m_context_thread.joinable())
 				m_context_thread.join();
 
-			std::cout << "[SERVER] Stopped!" << std::endl;
+			std::cout << "[Server] Stopped!" << std::endl;
 		}
 
 		void update()
 		{
 			m_message_queue.wait();
+
+			while (!m_message_queue.empty())
+			{
+				auto message = m_message_queue.pop_front();
+
+				on_message(message);
+			}
 		}
 
 	protected:
-		virtual void on_message() {}
+		virtual void on_message(Message<T>& message) {}
 
 	private:
 		void wait_for_client_connection()
@@ -64,15 +72,30 @@ namespace Net
 				{
 					if (!error_code)
 					{
-						std::cout << "[SERVER] New Connection: " << socket.remote_endpoint() << std::endl;
+						std::cout << "[Server] New Connection: " << socket.remote_endpoint() << std::endl;
 					}
 					else
 					{
-						std::cout << "[SERVER] Connection Error: " << error_code.message() << std::endl;
+						std::cout << "[Server] Connection Error: " << error_code.message() << std::endl;
 					}
 
 					wait_for_client_connection();
 				});
+		}
+
+		asio::ip::address get_local_ipv6_address()
+		{
+			asio::ip::tcp::resolver resolver(m_context);
+			asio::ip::tcp::resolver::query query(asio::ip::host_name(), "");
+			auto result = resolver.resolve(query);
+
+			// My temporary ipv6 address happens to be the 5th entry of the query result
+			// Do not use that on the production machine
+			for (size_t i = 0; i < 4; i++)
+				*result++;
+
+			asio::ip::tcp::endpoint endpoint = *result;
+			return endpoint.address();
 		}
 
 	private:
@@ -82,5 +105,7 @@ namespace Net
 		asio::ip::tcp::acceptor m_acceptor;
 
 		tsqueue<Message<T>> m_message_queue;
+
+		uint32_t m_id = 0;
 	};
 }

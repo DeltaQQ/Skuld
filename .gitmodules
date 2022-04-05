@@ -1,3 +1,6 @@
 [submodule "Libraries/GLFW"]
 	path = Libraries/GLFW
 	url = https://github.com/glfw/glfw.git
+[submodule "Libraries/libpqxx"]
+	path = Libraries/libpqxx
+	url = https://github.com/jtv/libpqxx.git

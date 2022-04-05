@@ -2,10 +2,13 @@
 #include <iostream>
 
 #include "GameServer.h"
+#include "Database.h"
 
 int main()
 {
-	GameServer server(8000);
+	Database database;
+
+	GameServer server(51500);
 	server.start();
 
 	while (true)
