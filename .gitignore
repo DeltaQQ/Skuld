@@ -5,9 +5,11 @@ Scripts/
 
 Client/Bin
 Client/Build
+Client/Config
 
 Engine/Lib
 Engine/Build
+Engine/Config
 
 Server/Bin
 Server/Build

@@ -12,7 +12,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     LINKER_LANGUAGE CXX
 
     RUNTIME_OUTPUT_DIRECTORY "../Bin"
-    # MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

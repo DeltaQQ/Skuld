@@ -4,6 +4,8 @@
 
 #include "GameMsg.h"
 
+#include "Authentication.h"
+
 class GameClient : Net::Client<GameMsg>
 {
 public:
@@ -12,8 +14,7 @@ public:
 
 	void start();
 
-	void on_message(Net::Message<GameMsg>& message) override;
-
 private:
 	Window m_window;
+	Authentication m_authentication;
 };

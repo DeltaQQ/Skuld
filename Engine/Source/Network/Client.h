@@ -4,6 +4,7 @@
 
 #include "Common.h"
 #include "Message.h"
+#include "Connection.h"
 
 namespace Net
 {
@@ -11,61 +12,63 @@ namespace Net
 	class Client
 	{
 	public:
-		Client()
-			:
-			m_socket(asio::ip::tcp::socket(m_context))
-		{}
+		Client() = default;
 
 		virtual ~Client()
 		{
 			disconnect();
 		}
 
-		virtual void on_message(Net::Message<T>& message) {}
-
-		void connect(const std::string& host, uint16_t port)
+		void connect_to_server(const std::string& host, uint16_t port, const std::string& user_id)
 		{
 			try
 			{
 				asio::ip::tcp::resolver resolver(m_context);
 				asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(host, std::to_string(port));
 
-				asio::async_connect(m_socket, endpoints,
-					[this](std::error_code error_code, asio::ip::tcp::endpoint endpoint)
-					{
-						if (!error_code)
-						{
-							std::cout << "Connected!" << std::endl;
-						}
-						else
-						{
-							std::cout << error_code.message() << std::endl;
-						}
-					});
+				m_connection = std::make_unique<Connection<T>>(
+					Connection<T>::Owner::Client,
+					asio::ip::tcp::socket(m_context),
+					m_context,
+					m_incoming_message_queue);
+
+				m_connection->connect_to_server(endpoints);
 
 				m_context_thread = std::thread([this]() { m_context.run(); });
 			}
 			catch (std::exception& e)
 			{
-				std::cerr << "[Connection Failed]: " << e.what() << std::endl;
+				std::cerr << e.what() << std::endl;
 			}
 		}
 
 		void disconnect()
 		{
-			if (m_socket.is_open())
-				asio::post(m_context, [this]() { m_socket.close(); });
+			if (is_connected()) m_connection->disconnect();
 
-			if (m_context_thread.joinable())
-				m_context_thread.join();
+			m_context.stop();
+
+			if (m_context_thread.joinable()) m_context_thread.join();
+
+			m_connection.release();
+		}
+
+		bool is_connected() const
+		{
+			return m_connection ? m_connection->is_valid() : false;
+		}
+
+		void send(const Message<T>& message)
+		{
+			if (is_connected()) m_connection->send(message);
 		}
 
 	private:
 		asio::io_context m_context;
 		std::thread m_context_thread;
 
-		asio::ip::tcp::socket m_socket;
+		std::unique_ptr<Connection<T>> m_connection;
 
-		tsqueue<Message<T>> m_message_queue;
+		tsqueue<OwnedMessage<T>> m_incoming_message_queue;
 	};
 }

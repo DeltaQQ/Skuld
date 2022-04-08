@@ -3,6 +3,7 @@
 #include <Data Structures/tsqueue.h>
 
 #include "Message.h"
+#include "Connection.h"
 
 namespace Net
 {
@@ -43,26 +44,65 @@ namespace Net
 		{
 			m_context.stop();
 
-			if (m_context_thread.joinable())
-				m_context_thread.join();
+			if (m_context_thread.joinable()) m_context_thread.join();
 
 			std::cout << "[Server] Stopped!" << std::endl;
 		}
 
 		void update()
 		{
-			m_message_queue.wait();
+			m_incoming_message_queue.wait();
 
-			while (!m_message_queue.empty())
+			while (!m_incoming_message_queue.empty())
 			{
-				auto message = m_message_queue.pop_front();
-
-				on_message(message);
+				auto message = m_incoming_message_queue.pop_front();
+				on_message(message.remote, message.message);
 			}
 		}
 
+		void message_client(std::shared_ptr<Connection<T>> client, const Message<T>& message)
+		{
+			if (client && client->is_connected())
+			{
+				client->send(message);
+			}
+			else
+			{
+				on_client_disconnect(client);
+				client.reset();
+				m_connections.erase(std::remove(m_connections.begin(), m_connections.end(), client), m_connections.end());
+			}
+		}
+
+		void message_all_client(const Message<T>& message)
+		{
+			bool invalid_client_exists = false;
+
+			for (auto& client : m_connections)
+			{
+				if (client && client->is_connected())
+				{
+					client->send(message);
+				}
+				else
+				{
+					on_client_disconnect(client);
+					client.reset();
+					invalid_client_exists = true;
+				}
+			}
+
+			// Remove all dead clients in one go without invalidating the iterator above
+			if (invalid_client_exists)
+				m_connections.erase(std::remove(m_connections.begin(), m_connections.end(), nullptr), m_connections.end());
+		}
+
 	protected:
-		virtual void on_message(Message<T>& message) {}
+		virtual void on_message(std::shared_ptr<Connection<T>> client, Message<T>& message) {}
+
+		virtual void on_client_connect(std::shared_ptr<Connection<T>> client) {}
+
+		virtual void on_client_disconnect(std::shared_ptr<Connection<T>> client) {}
 
 	private:
 		void wait_for_client_connection()
@@ -73,6 +113,16 @@ namespace Net
 					if (!error_code)
 					{
 						std::cout << "[Server] New Connection: " << socket.remote_endpoint() << std::endl;
+
+						auto connection = std::make_shared<Connection<T>>(
+							Connection<T>::Owner::Server,
+							std::move(socket),
+							m_context,
+							m_incoming_message_queue);
+
+						on_client_connect(connection);
+
+						m_connections.push_back(std::move(connection));
 					}
 					else
 					{
@@ -104,8 +154,8 @@ namespace Net
 
 		asio::ip::tcp::acceptor m_acceptor;
 
-		tsqueue<Message<T>> m_message_queue;
+		tsqueue<OwnedMessage<T>> m_incoming_message_queue;
 
-		uint32_t m_id = 0;
+		std::deque<std::shared_ptr<Connection<T>>> m_connections;
 	};
 }

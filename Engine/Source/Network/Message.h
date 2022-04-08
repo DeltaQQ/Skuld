@@ -66,6 +66,22 @@ namespace Net
 			return message;
 		}
 	};
+
+	template <typename T>
+	class Connection;
+
+	template <typename T>
+	struct OwnedMessage
+	{
+		std::shared_ptr<Connection<T>> remote = nullptr;
+		Message<T> message;
+
+		friend std::ostream& operator<<(std::ostream& ostream, const OwnedMessage<T>& message)
+		{
+			ostream << message.message;
+			return ostream;
+		}
+	};
 }
 
 

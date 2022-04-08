@@ -11,9 +11,7 @@ Database::Database()
 	try
 	{
 		std::ifstream ifstream("db_connection.json");
-
 		nlohmann::json json;
-
 		ifstream >> json;
 
 		std::string credentials = json["connection"];
